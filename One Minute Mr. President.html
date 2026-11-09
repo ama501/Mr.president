@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>One Minute Mr. President</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9eef4;--panel:#ffffff;--ink:#14213d;--muted:#5b6578;--line:#cfd8e3;--btn:#14213d;--btn-ink:#ffffff;
+  --money:#d99a00;--happy:#e04f6a;--env:#2a9d5f;--bad:#c0392b;--good:#1f8a4c;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0f1624;--panel:#18223a;--ink:#eef2f8;--muted:#a3aec2;--line:#2c3855;--btn:#eef2f8;--btn-ink:#0f1624;--bad:#ff7a6b;--good:#5fd68f;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#0f1624;--panel:#18223a;--ink:#eef2f8;--muted:#a3aec2;--line:#2c3855;--btn:#eef2f8;--btn-ink:#0f1624;--bad:#ff7a6b;--good:#5fd68f;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+main{max-width:560px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:2rem;line-height:1.1;font-weight:800;margin:0 0 6px;letter-spacing:-.02em}
+h2{font-size:1.5rem;line-height:1.2;font-weight:800;margin:0 0 8px}
+p{margin:0 0 12px}
+.muted{color:var(--muted)}
+.panel{background:var(--panel);border:2px solid var(--ink);border-radius:14px;padding:18px;margin-top:14px}
+button{font:inherit;cursor:pointer}
+.btn{display:block;width:100%;background:var(--btn);color:var(--btn-ink);border:0;border-radius:10px;padding:14px 16px;font-weight:600;font-size:1rem;margin-top:12px}
+.btn:focus-visible,.choice:focus-visible{outline:3px solid var(--happy);outline-offset:2px}
+.choice{display:block;width:100%;text-align:left;background:transparent;color:var(--ink);border:2px solid var(--ink);border-radius:10px;padding:14px;margin-top:10px;font-weight:600}
+.choice:hover{background:var(--bg)}
+.choice small{display:block;font-weight:400;color:var(--muted);margin-top:2px}
+.meters{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:10px 0;z-index:2}
+.meter{background:var(--panel);border:2px solid var(--ink);border-radius:10px;padding:8px}
+.meter b{display:flex;justify-content:space-between;font-size:.85rem}
+.bar{height:10px;background:var(--line);border-radius:6px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:6px;transition:width .5s}
+.bar.low i{background:var(--bad)!important}
+.prog{font-size:.9rem;color:var(--muted)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.chip{border:2px solid currentColor;border-radius:20px;padding:2px 10px;font-weight:600;font-size:.9rem}
+.up{color:var(--good)}.down{color:var(--bad)}.same{color:var(--muted)}
+.quote{border-left:4px solid var(--happy);padding-left:12px;font-style:italic}
+.icon{font-size:2.4rem}
+ul{padding-left:18px;margin:8px 0}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+var NAMES=["Money","Happiness","Environment"],ICONS=["💰","😊","🌿"],COLORS=["var(--money)","var(--happy)","var(--env)"];
+var POOL=[
+{icon:"🚗",title:"Self-Driving Traffic Jam",text:"Ten thousand driverless cars are stuck in a loop around City Hall. Nobody is driving, and nobody is moving.",
+ choices:[
+  {label:"Ban human-driven cars downtown",sub:"Cleaner air, angry drivers",d:[-1,-2,2],msg:"Streets are quiet and the air is clear. Resident Omar: “I walked to work. My legs are filing a complaint.”"},
+  {label:"Charge a fee for every robo-taxi ride",sub:"Cash now, grumbling later",d:[2,-1,-1],msg:"The treasury fills up fast. Resident Lina: “I paid more to sit in traffic than I paid for the car.”"}]},
+{icon:"💧",title:"The Water Runs Low",text:"The reservoir is down to a puddle. The city’s 4,000 robot gardeners are still watering the lawns.",
+ choices:[
+  {label:"Build a huge desalination plant",sub:"Expensive, thirsty for power",d:[-2,1,-1],msg:"Taps flow again and people cheer. Resident Sami: “Fresh water! Now the bill arrives.”"},
+  {label:"Start strict water rationing",sub:"Save water, lose popularity",d:[1,-2,1],msg:"The reservoir slowly recovers. Resident Dana: “My shower is now two minutes. My songs are suffering.”"}]},
+{icon:"🤖",title:"Robots Take the Jobs",text:"A factory replaced 2,000 workers with robots overnight. The robots are very productive and have no opinions.",
+ choices:[
+  {label:"Tax the robots and pay for retraining",sub:"Fair, but it costs money",d:[-1,2,0],msg:"Workers sign up for new courses. Resident Karim: “I am learning to repair the robot that took my job. Poetic.”"},
+  {label:"Let companies automate freely",sub:"Profits up, people worried",d:[2,-3,0],msg:"Business is booming, the streets are not. Resident Huda: “The robots got a bonus. I got a flyer.”"}]},
+{icon:"⚡",title:"The Power Plant Decision",text:"The city needs more electricity by next month. Your advisor slides two folders across the desk.",
+ choices:[
+  {label:"Build the cheap, dirty power station",sub:"Fast, cheap, smoky",d:[2,1,-3],msg:"Lights on, bills down, sky grey. Resident Faisal: “At least the haze matches my mood.”"},
+  {label:"Build a solar and battery farm",sub:"Clean but costly",d:[-2,0,2],msg:"The desert glitters with panels. Resident Rana: “Clean energy! Can it also fix my Wi-Fi?”"}]},
+{icon:"🖥️",title:"A Giant AI Data Center",text:"A tech company offers to build the world’s biggest data center on the last empty green field in the city.",
+ choices:[
+  {label:"Approve the data center",sub:"Big money, big hum",d:[3,-1,-2],msg:"Millions pour in. Resident Nour: “The field is gone, but I hear the new building thinks very deeply.”"},
+  {label:"Turn the field into a public park",sub:"Free joy, no income",d:[-1,2,1],msg:"Families fill the park on day one. Resident Yazan: “A tree! In the future! Unbelievable.”"}]}
+];
+POOL=POOL.concat([
+{icon:"🐕",title:"Robot Dog Walkers",text:"Thousands of robot dogs now walk the real dogs. The real dogs love it. The park rangers are confused.",
+ choices:[
+  {label:"Ban robot dogs from the parks",sub:"Quiet parks, sad dogs",d:[0,-2,1],msg:"The parks are calm again. Resident Mona: “My dog sulked for two days. The robot dog sent flowers.”"},
+  {label:"Give robot dogs official city jobs",sub:"Cute, but on the payroll",d:[-1,2,0],msg:"The city’s mascots have a salary. Resident Adel: “Best employee in City Hall. Never takes a lunch break.”"}]},
+{icon:"🚁",title:"Flying Taxis",text:"A company wants to fill the sky with flying taxis. Commuting becomes cool, and loud.",
+ choices:[
+  {label:"Allow flying taxis everywhere",sub:"Big profits, big buzz",d:[2,1,-2],msg:"Traffic moves to the sky. Resident Tariq: “I waved at my boss through his window. Awkward.”"},
+  {label:"Emergency flights only",sub:"Peace and quiet, fewer thrills",d:[-1,-1,1],msg:"The sky stays calm. Resident Salma: “I was promised a flying car. I got a bicycle lane.”"}]},
+{icon:"🗑️",title:"Trash Mountain",text:"The city’s trash mountain is now taller than City Hall. A seagull has declared itself mayor of the top.",
+ choices:[
+  {label:"Ship the trash to another country",sub:"Out of sight, out of mind",d:[1,0,-2],msg:"The mountain vanishes. Resident Reem: “I miss the view. Also, where did it go?”"},
+  {label:"Build a recycling robot army",sub:"Costly, but very tidy",d:[-2,1,2],msg:"Robots sort trash day and night. Resident Bader: “They judged my bin. They were right.”"}]},
+{icon:"📱",title:"The Happiness App",text:"A new app scores every citizen’s mood each day. The scores are public. The cameras are friendly.",
+ choices:[
+  {label:"Make the app mandatory",sub:"Data for the city, stress for people",d:[1,-3,0],msg:"Everyone smiles on schedule. Resident Jana: “I was sad about being scored. The app gave me minus ten.”"},
+  {label:"Optional, with a prize lottery",sub:"Fun, but the prizes cost money",d:[-1,2,0],msg:"People join for the prizes. Resident Hamad: “I won a free coffee! My mood score is 100.”"}]},
+{icon:"🌊",title:"The Sea Is Coming",text:"The sea level is rising. Fish now swim past the bakery on Main Street.",
+ choices:[
+  {label:"Build a giant sea wall",sub:"Protects homes, costs a fortune",d:[-3,2,-1],msg:"The wall holds the water back. Resident Layla: “Great wall! Now I can’t see the sea from my balcony.”"},
+  {label:"Move coastal homes inland",sub:"Better for nature, hard on people",d:[-1,-3,2],msg:"The coast heals, the families grumble. Resident Waleed: “I packed my whole house. The cat packed itself.”"}]},
+{icon:"🏆",title:"The Robot Olympics",text:"The city is invited to host the first Robot Olympics. The robots promise to behave. Mostly.",
+ choices:[
+  {label:"Host the games",sub:"Fame and income, crowds and waste",d:[3,1,-2],msg:"Tourists flood in. Resident Majed: “A robot beat me at table tennis and then said ‘good game’. I’m still thinking about it.”"},
+  {label:"Decline politely",sub:"Quiet year, bruised pride",d:[0,-2,1],msg:"The neighbors host instead. Resident Dalal: “We could have had a gold medal. Instead we have a nap.”"}]},
+{icon:"🐝",title:"The Bees Are Gone",text:"Real bees are disappearing. A company offers one million tiny robot bees. They come with a very cute jingle.",
+ choices:[
+  {label:"Buy the robot bees",sub:"Quick fix, not nature’s fix",d:[-2,1,0],msg:"The flowers are pollinated. Resident Nada: “A robot bee stung me. It apologized in three languages.”"},
+  {label:"Ban pesticides to save real bees",sub:"Farmers will complain",d:[-1,-1,3],msg:"Real bees slowly return. Resident Ziad: “My tomatoes have bugs. The bees seem proud.”"}]}
+]);
+var CARDS=[];
+var LOSS=[
+ ["Bankrupt!","The treasury is empty. The robots repossess City Hall and the banks hold your farewell party."],
+ ["Revolt!","The residents are furious. You are escorted out of office by a crowd of angry (and very polite) delivery drones."],
+ ["Environmental collapse!","The air is thick, the water is gone, and the city is unlivable. Your presidency ends in a cloud of smog."]];
+var WIN=[
+ ["The Treasurer President","Your city is rich and well organized."],
+ ["The People’s President","Your residents adore you."],
+ ["The Green President","Your city is a model of sustainability."]];
+var WEAK=[
+ "But the budget is held together with tape.",
+ "But many residents still feel left behind.",
+ "But nature is paying a price that future generations will see."];
+var s,i,log,app=document.getElementById("app");
+
+function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!==undefined)e.innerHTML=h;return e}
+function clear(){app.innerHTML=""}
+function meters(){
+  var w=el("div","meters");
+  for(var k=0;k<3;k++){
+    var m=el("div","meter","<b><span>"+ICONS[k]+" "+NAMES[k]+"</span><span>"+s[k]+"</span></b>");
+    var bar=el("div","bar"+(s[k]<=2?" low":""),'<i style="width:'+(s[k]*10)+'%;background:'+COLORS[k]+'"></i>');
+    m.appendChild(bar);w.appendChild(m);
+  }
+  return w;
+}
+function start(){
+  s=[5,5,5];i=0;log=[];CARDS=POOL.slice().sort(function(){return Math.random()-.5}).slice(0,5);clear();
+  app.appendChild(el("div","icon","🏛️"));
+  app.appendChild(el("h1",0,"One Minute Mr. President"));
+  app.appendChild(el("p","muted","Lead a future city through five difficult decisions. Balance money, happiness and the environment. If any of them reaches zero, you lose."));
+  var p=el("div","panel","<p><b>How to play</b></p><ul><li>The cards are shuffled, so every game is different.</li><li>You have 60 seconds per decision. If time runs out, your advisor decides for you.</li><li>Each card has two choices.</li><li>Every choice helps something and hurts something else.</li><li>All meters start at 5 and can’t go above 10.</li></ul>");
+  app.appendChild(p);
+  var b=el("button","btn","Start your term");b.onclick=card;app.appendChild(b);
+}
+var T=null;
+function stopT(){if(T){clearInterval(T);T=null}}
+function card(){
+  var c=CARDS[i];clear();stopT();
+  app.appendChild(meters());
+  app.appendChild(el("div","prog","Decision "+(i+1)+" of "+CARDS.length));
+  var tm=el("div","prog","⏱ 60 seconds left");app.appendChild(tm);
+  var p=el("div","panel");
+  p.appendChild(el("div","icon",c.icon));
+  p.appendChild(el("h2",0,c.title));
+  p.appendChild(el("p",0,c.text));
+  c.choices.forEach(function(ch,n){
+    var b=el("button","choice",ch.label+"<small>"+ch.sub+"</small>");
+    b.onclick=function(){pick(n)};p.appendChild(b);
+  });
+  app.appendChild(p);
+  var left=60;
+  T=setInterval(function(){
+    left--;tm.textContent="⏱ "+left+" seconds left";
+    if(left<=10){tm.className="prog down"}
+    if(left<=0){pick(Math.floor(Math.random()*2),true)}
+  },1000);
+}
+function pick(n,late){
+  stopT();
+  var c=CARDS[i],ch=c.choices[n];
+  for(var k=0;k<3;k++){s[k]=Math.min(10,s[k]+ch.d[k])}
+  log.push(c.title+": "+ch.label);
+  clear();
+  app.appendChild(meters());
+  var p=el("div","panel");
+  p.appendChild(el("h2",0,"You chose: "+ch.label));
+  var chips=el("div","chips");
+  for(var k=0;k<3;k++){
+    var d=ch.d[k],cls=d>0?"up":d<0?"down":"same";
+    chips.appendChild(el("span","chip "+cls,ICONS[k]+" "+(d>0?"+":"")+d));
+  }
+  p.appendChild(chips);
+  if(late){p.appendChild(el("p","muted","⏱ Time’s up! Your advisor made the call for you."))}
+  p.appendChild(el("p","quote",ch.msg));
+  var dead=s.some(function(v){return v<=0});
+  var last=i===CARDS.length-1;
+  var b=el("button","btn",dead||last?"See the result":"Next decision");
+  b.onclick=function(){if(dead||last){end()}else{i++;card()}};
+  p.appendChild(b);app.appendChild(p);
+}
+function end(){
+  clear();
+  var lost=s.findIndex(function(v){return v<=0}),t,m;
+  if(lost>=0){t=LOSS[lost][0];m=LOSS[lost][1]}
+  else{
+    var hi=0,lo=0;
+    for(var k=1;k<3;k++){if(s[k]>s[hi])hi=k;if(s[k]<s[lo])lo=k}
+    t=WIN[hi][0];m=WIN[hi][1]+" "+(lo===hi?"Remarkably balanced.":WEAK[lo]);
+  }
+  app.appendChild(el("div","icon",lost>=0?"💥":"🎉"));
+  app.appendChild(el("h1",0,lost>=0?"Game over":"You finished your term!"));
+  app.appendChild(meters());
+  var p=el("div","panel");
+  p.appendChild(el("h2",0,t));
+  p.appendChild(el("p",0,m));
+  var items=log.map(function(x){return "<li>"+x+"</li>"}).join("");
+  p.appendChild(el("p","muted","<b>Your decisions</b> (compare with your classmates):<ul>"+items+"</ul>"));
+  p.appendChild(el("p","muted","Today’s choices shape tomorrow’s city. Which trade-offs will you make next time?"));
+  var b=el("button","btn","Play again");b.onclick=start;p.appendChild(b);
+  app.appendChild(p);
+}
+start();
+</script>
+</body>
+</html>
